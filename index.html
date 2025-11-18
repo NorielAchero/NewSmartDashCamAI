@@ -15,7 +15,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    
+    <link rel="icon" href="favicon.jpeg" type="image/x-icon">
+
     <style>
         /* Color Palette Variables */
         :root {
@@ -243,7 +244,7 @@
             font-weight: 600;
             border: none;
             border-radius: 5px;
-            transition: all 0.3s ease;
+            transition: all 0.1s ease;
             text-transform: capitalize;
             font-family: 'Montserrat', sans-serif;
         }
@@ -529,7 +530,8 @@
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
             width: 280px;
-            min-height: 220px;
+            min-height: 280px;  /* ✅ CHANGED: Increase from 220px to 280px */
+            height: 280px;      /* ✅ ADDED: Fixed height */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -1053,6 +1055,44 @@
             transform: translateY(-2px);
             box-shadow: 0 12px 35px rgba(220, 53, 69, 0.4);
         }
+
+        /* ========== CAMERA FEED STYLES ========== */
+        .demo-video-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        #demoCamera {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+        }
+
+        #demoOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            z-index: 10;
+        }
+
+        #cameraPlaceholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--surface-a50), var(--surface-a40));
+            z-index: 5;
+        }
+
         /* ========== UPDATED FOOTER SECTION ========== */
         .footer-section {
             background: var(--surface-a50);
@@ -1423,7 +1463,7 @@
                         </div>
 
                         <!-- Button -->
-                        <button class="reviews-btn fade-in-up delay-3">Try Demo</button>
+                       <button id="tryDemoBtn" class="reviews-btn fade-in-up delay-3">Try Demo</button>
                     </div>
                 </div>
 
@@ -1708,11 +1748,11 @@
         <div class="demo-content">
             <!-- Left Side - Camera Feed -->
             <div class="demo-video-container fade-in-up delay-1">
-                <div class="demo-video">
-                    <div class="demo-placeholder">
-                        <i class="fas fa-video"></i>
-                        <p>Live Camera Feed<br><small>Real-time AI Detection</small></p>
-                    </div>
+                <video id="demoCamera" autoplay playsinline style="display: none;"></video>
+                <canvas id="demoOverlay" width="640" height="480"></canvas>
+                <div class="demo-placeholder" id="cameraPlaceholder">
+                    <i class="fas fa-video"></i>
+                    <p>Live Camera Feed<br><small>Click "Start Detection" to begin</small></p>
                 </div>
             </div>
 
@@ -1744,7 +1784,7 @@
                     <div class="detection-setting">
                         <span class="detection-label">Driver Fatigue Detection:</span>
                         <label class="detection-toggle">
-                            <input type="checkbox" checked>
+                            <input type="checkbox" id="toggleFatigue" checked>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1752,7 +1792,7 @@
                     <div class="detection-setting">
                         <span class="detection-label">Distracted Driver Detection:</span>
                         <label class="detection-toggle">
-                            <input type="checkbox" checked>
+                            <input type="checkbox" id="toggleDistracted" checked>
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
@@ -1785,7 +1825,77 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
     
-    <script>
+<script>
+    // ========== MAIN INITIALIZATION ========== 
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // ========== API KEY MANAGEMENT ========== 
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const toggleApiKeyBtn = document.getElementById('toggleApiKey');
+        const saveApiKeyBtn = document.getElementById('saveApiKey');
+        
+        // Load saved API key from localStorage on page load
+        const savedApiKey = localStorage.getItem('roboflowApiKey');
+        if (savedApiKey) {
+            apiKeyInput.value = savedApiKey;
+            console.log('✅ API Key loaded from storage');
+        }
+        
+        // Toggle API key visibility
+        if (toggleApiKeyBtn) {
+            toggleApiKeyBtn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (apiKeyInput.type === 'password') {
+                    apiKeyInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    apiKeyInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        }
+        
+        // Save API key to localStorage
+        if (saveApiKeyBtn) {
+            saveApiKeyBtn.addEventListener('click', function() {
+                const apiKey = apiKeyInput.value.trim();
+                
+                if (apiKey) {
+                    // Save to localStorage
+                    localStorage.setItem('roboflowApiKey', apiKey);
+                    
+                    // Visual feedback
+                    this.classList.add('api-key-saved');
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-check"></i> API Key Saved!';
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {
+                        this.classList.remove('api-key-saved');
+                        this.innerHTML = originalText;
+                    }, 2000);
+                    
+                    console.log('✅ API Key saved successfully');
+                } else {
+                    // Show error if empty
+                    this.style.background = 'linear-gradient(45deg, #dc3545, #c82333)';
+                    this.innerHTML = '<i class="fas fa-exclamation-triangle"></i> API Key Required!';
+                    
+                    setTimeout(() => {
+                        this.style.background = '';
+                        this.innerHTML = '<i class="fas fa-save"></i> Save API Key';
+                    }, 2000);
+                }
+            });
+        }
+        
+        // Global function to get the API key
+        window.getRoboflowApiKey = function() {
+            return localStorage.getItem('roboflowApiKey');
+        };
+
         // ========== SCROLL ANIMATIONS ========== 
         // Intersection Observer for fade-in-up animations
         const observerOptions = {
@@ -1802,214 +1912,414 @@
         }, observerOptions);
 
         // Observe all elements with fade-in-up class
-        document.addEventListener('DOMContentLoaded', function() {
-            const fadeElements = document.querySelectorAll('.fade-in-up');
-            fadeElements.forEach(element => {
-                observer.observe(element);
-            });
+        const fadeElements = document.querySelectorAll('.fade-in-up');
+        fadeElements.forEach(element => {
+            observer.observe(element);
+        });
 
-            // Immediately animate hero elements (they're in viewport on load)
-            const heroElements = document.querySelector('.hero-section').querySelectorAll('.fade-in-up');
+        // Immediately animate hero elements (they're in viewport on load)
+        const heroSection = document.querySelector('.hero-section');
+        if (heroSection) {
+            const heroElements = heroSection.querySelectorAll('.fade-in-up');
             setTimeout(() => {
                 heroElements.forEach(element => {
                     element.classList.add('animate');
                 });
             }, 100);
-        });
-
-        // ✅ PARALLAX MOUSE MOVEMENT for Features Section
-        const parallaxBg = document.getElementById('parallaxBg');
-        const featuresSection = document.querySelector('.features-section');
-
-        if (parallaxBg && featuresSection) {
-            featuresSection.addEventListener('mousemove', (e) => {
-                // Only apply parallax on desktop (screen width > 768px)
-                if (window.innerWidth > 768) {
-                    const rect = featuresSection.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    
-                    // Calculate movement as percentage of section dimensions
-                    const xPercent = (x / rect.width) - 0.5; // -0.5 to 0.5
-                    const yPercent = (y / rect.height) - 0.5; // -0.5 to 0.5
-                    
-                    // Apply subtle movement (multiply by small number for gentle effect)
-                    const moveX = xPercent * 40; // Max 20px movement
-                    const moveY = yPercent * 40; // Max 20px movement
-                    
-                    parallaxBg.style.transform = `translate(${moveX}px, ${moveY}px)`;
-                }
-            });
-
-            // Reset position when mouse leaves
-            featuresSection.addEventListener('mouseleave', () => {
-                if (window.innerWidth > 768) {
-                    parallaxBg.style.transform = 'translate(0px, 0px)';
-                }
-            });
         }
 
-        // ✅ PARALLAX MOUSE MOVEMENT for Demo Section
-        const demoParallaxBg = document.getElementById('demoParallaxBg');
-        const demoSection = document.querySelector('.demo-section');
-
-        if (demoParallaxBg && demoSection) {
-            demoSection.addEventListener('mousemove', (e) => {
-                // Only apply parallax on desktop (screen width > 768px)
-                if (window.innerWidth > 768) {
-                    const rect = demoSection.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    
-                    // Calculate movement as percentage of section dimensions
-                    const xPercent = (x / rect.width) - 0.5; // -0.5 to 0.5
-                    const yPercent = (y / rect.height) - 0.5; // -0.5 to 0.5
-                    
-                    // Apply subtle movement (multiply by small number for gentle effect)
-                    const moveX = xPercent * 40; // Max 20px movement
-                    const moveY = yPercent * 40; // Max 20px movement
-                    
-                    demoParallaxBg.style.transform = `translate(${moveX}px, ${moveY}px)`;
-                }
-            });
-
-            // Reset position when mouse leaves
-            demoSection.addEventListener('mouseleave', () => {
-                if (window.innerWidth > 768) {
-                    demoParallaxBg.style.transform = 'translate(0px, 0px)';
-                }
-            });
-        }
-
-        // Smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // ✅ UPDATED DEMO FUNCTIONALITY - Toggle Button
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleBtn = document.getElementById('detectionToggle');
-            let isDetecting = false;
-            
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', function() {
-                    if (!isDetecting) {
-                        // Start Detection
-                        this.textContent = 'End Detection';
-                        this.classList.remove('primary');
-                        this.classList.add('stop');
-                        isDetecting = true;
-                        console.log('Detection started');
-                        
-                        // Add visual feedback for active detection
-                        document.querySelector('.demo-placeholder p').innerHTML = 
-                            'Detection Active<br><small>AI Models Running...</small>';
-                    } else {
-                        // End Detection
-                        this.textContent = 'Start Detection';
-                        this.classList.remove('stop');
-                        this.classList.add('primary');
-                        isDetecting = false;
-                        console.log('Detection ended');
-                        
-                        // Reset visual feedback
-                        document.querySelector('.demo-placeholder p').innerHTML = 
-                            'Live Camera Feed<br><small>Real-time AI Detection</small>';
+        // ========== DETECTION FUNCTIONALITY ==========
+        // Elements
+        const toggleBtn = document.getElementById('detectionToggle');
+        const video = document.getElementById('demoCamera');
+        const canvas = document.getElementById('demoOverlay');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+        const placeholder = document.getElementById('cameraPlaceholder');
+        const toggleFatigue = document.getElementById('toggleFatigue');
+        const toggleDistracted = document.getElementById('toggleDistracted');
+        
+        // State
+        let isDetecting = false;
+        let detectionInterval = null;
+        let stream = null;
+        
+        // Model IDs
+        const FATIGUE_MODEL = "driver-fatigue/1";
+        const DISTRACTED_MODEL = "distracted-driving-fsygw/3";
+        const API_URL = "https://detect.roboflow.com";
+        
+        // Audio alert
+        const alertAudio = new Audio('1.mp3');
+        
+        // Toggle Detection Button
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', async function() {
+                if (!isDetecting) {
+                    // Check if API key exists
+                    const apiKey = window.getRoboflowApiKey();
+                    if (!apiKey) {
+                        alert('⚠️ Please enter and save your Roboflow API Key first!');
+                        if (apiKeyInput) {
+                            apiKeyInput.focus();
+                            apiKeyInput.style.borderColor = '#dc3545';
+                            setTimeout(() => {
+                                apiKeyInput.style.borderColor = '';
+                            }, 2000);
+                        }
+                        return;
                     }
+                    
+                    // Start Detection
+                    await startDetection();
+                } else {
+                    // Stop Detection
+                    stopDetection();
+                }
+            });
+        }
+        
+        // Start Detection Function
+        async function startDetection() {
+            try {
+                console.log('🎬 Requesting camera access...');
+                
+                // Request camera access
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 640, 
+                        height: 480,
+                        facingMode: 'user'
+                    } 
                 });
+                
+                video.srcObject = stream;
+                video.style.display = 'block';
+                placeholder.style.display = 'none';
+                
+                // Update button
+                toggleBtn.textContent = 'Stop Detection';
+                toggleBtn.classList.remove('primary');
+                toggleBtn.classList.add('stop');
+                isDetecting = true;
+                
+                // Wait for video to be ready
+                video.onloadedmetadata = () => {
+                    console.log('📹 Camera ready, starting detection loop...');
+                    // Start detection loop (every 500ms for better performance)
+                    detectionInterval = setInterval(runDetection, 500);
+                };
+                
+                console.log('✅ Detection started successfully');
+            } catch (error) {
+                console.error('❌ Error accessing camera:', error);
+                let errorMessage = 'Unable to access camera. ';
+                
+                if (error.name === 'NotAllowedError') {
+                    errorMessage += 'Please allow camera permissions and try again.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += 'No camera found on this device.';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage += 'Camera is already in use by another application.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                alert(errorMessage);
             }
-        });
-
-        // Ensure video plays on load
-        window.addEventListener('load', function() {
-            const video = document.getElementById('heroVideo');
-            if (video) {
-                video.play().catch(function(error) {
-                    console.log('Autoplay was prevented:', error);
-                });
-            }
-        });
-
-        console.log('Smart Dashcam AI - Page Loaded Successfully!');
-
-
-        // ========== API KEY MANAGEMENT ==========
-document.addEventListener('DOMContentLoaded', function() {
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const toggleApiKeyBtn = document.getElementById('toggleApiKey');
-    const saveApiKeyBtn = document.getElementById('saveApiKey');
-    
-    // Load saved API key from localStorage on page load
-    const savedApiKey = localStorage.getItem('roboflowApiKey');
-    if (savedApiKey) {
-        apiKeyInput.value = savedApiKey;
-        console.log('API Key loaded from storage');
-    }
-    
-    // Toggle API key visibility
-    if (toggleApiKeyBtn) {
-        toggleApiKeyBtn.addEventListener('click', function() {
-            const icon = this.querySelector('i');
-            if (apiKeyInput.type === 'password') {
-                apiKeyInput.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                apiKeyInput.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        });
-    }
-    
-    // Save API key to localStorage
-    if (saveApiKeyBtn) {
-        saveApiKeyBtn.addEventListener('click', function() {
-            const apiKey = apiKeyInput.value.trim();
+        }
+        
+        // Stop Detection Function
+        function stopDetection() {
+            console.log('🛑 Stopping detection...');
             
-            if (apiKey) {
-                // Save to localStorage
-                localStorage.setItem('roboflowApiKey', apiKey);
+            // Stop detection loop
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
+            }
+            
+            // Stop camera stream
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log('📹 Camera track stopped');
+                });
+                stream = null;
+            }
+            
+            // Reset UI
+            video.style.display = 'none';
+            placeholder.style.display = 'flex';
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // Update button
+            toggleBtn.textContent = 'Start Detection';
+            toggleBtn.classList.remove('stop');
+            toggleBtn.classList.add('primary');
+            isDetecting = false;
+            
+            console.log('✅ Detection stopped successfully');
+        }
+        
+        // Run Detection Function
+        async function runDetection() {
+            if (!isDetecting || !ctx || !video.videoWidth) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Capture frame from video
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(video, 0, 0);
+            
+            // Convert to blob
+            tempCanvas.toBlob(async (blob) => {
+                if (!blob) {
+                    console.warn('⚠️ Failed to create image blob');
+                    return;
+                }
                 
-                // Visual feedback
-                this.classList.add('api-key-saved');
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-check"></i> API Key Saved!';
+                const formData = new FormData();
+                formData.append('file', blob);
                 
-                // Reset button after 2 seconds
+                const apiKey = window.getRoboflowApiKey();
+                
+                try {
+                    // Array to hold all API calls
+                    const detectionPromises = [];
+                    
+                    // Driver Fatigue Detection
+                    if (toggleFatigue && toggleFatigue.checked) {
+                        const fatiguePromise = fetch(
+                            `${API_URL}/${FATIGUE_MODEL}?api_key=${apiKey}`,
+                            { method: 'POST', body: formData }
+                        ).then(response => response.json())
+                          .then(data => ({ type: 'fatigue', data }));
+                        
+                        detectionPromises.push(fatiguePromise);
+                    }
+                    
+                    // Distracted Driver Detection
+                    if (toggleDistracted && toggleDistracted.checked) {
+                        const distractedPromise = fetch(
+                            `${API_URL}/${DISTRACTED_MODEL}?api_key=${apiKey}`,
+                            { method: 'POST', body: formData }
+                        ).then(response => response.json())
+                          .then(data => ({ type: 'distracted', data }));
+                        
+                        detectionPromises.push(distractedPromise);
+                    }
+                    
+                    // Execute all detections in parallel
+                    const results = await Promise.all(detectionPromises);
+                    
+                    // Process results
+                    results.forEach(result => {
+                        if (result.type === 'fatigue' && result.data.predictions) {
+                            result.data.predictions.forEach(pred => {
+                                // ✅ CHANGED: Use red color for Drowsy, green for Awake
+                                const color = (pred.class === 'Drowsy') ? 'red' : 'lime';
+                                drawBoundingBox(pred, color);
+                                
+                                // Alert if drowsy
+                                if (pred.class === 'Drowsy' && pred.confidence > 0.7) {
+                                    console.log(`🚨 DROWSY DETECTED - Confidence: ${(pred.confidence * 100).toFixed(1)}%`);
+                                    playAlert();
+                                }
+                            });
+                        }
+                        
+                        if (result.type === 'distracted' && result.data.predictions) {
+                            result.data.predictions.forEach(pred => {
+                                // ✅ Keep red for distracted driving
+                                drawBoundingBox(pred, 'red');
+                                
+                                // Alert if using phone or eating
+                                if ((pred.class === 'Using Phone' || pred.class === 'Eating Drinking') 
+                                    && pred.confidence > 0.7) {
+                                    console.log(`⚠️ DISTRACTED DETECTED - ${pred.class} - Confidence: ${(pred.confidence * 100).toFixed(1)}%`);
+                                    playAlert();
+                                }
+                            });
+                        }
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Detection error:', error);
+                    
+                    // Check if it's an API error
+                    if (error.message.includes('Failed to fetch')) {
+                        console.error('🌐 Network error - check your internet connection');
+                    } else if (error.message.includes('401')) {
+                        console.error('🔑 Invalid API key - please check your Roboflow API key');
+                    } else if (error.message.includes('429')) {
+                        console.error('⏸️ Rate limit exceeded - too many API calls');
+                    }
+                }
+            }, 'image/jpeg', 0.8); // Added quality parameter
+        }
+        
+        // Draw Bounding Box Function
+        function drawBoundingBox(prediction, color) {
+            const { x, y, width, height, class: label, confidence } = prediction;
+            const boxX = x - width / 2;
+            const boxY = y - height / 2;
+            
+            // Scale to canvas size
+            const scaleX = canvas.width / video.videoWidth;
+            const scaleY = canvas.height / video.videoHeight;
+            
+            const scaledX = boxX * scaleX;
+            const scaledY = boxY * scaleY;
+            const scaledWidth = width * scaleX;
+            const scaledHeight = height * scaleY;
+            
+            // Draw box
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
+            
+            // Draw label background
+            ctx.fillStyle = color;
+            const labelText = `${label} ${(confidence * 100).toFixed(1)}%`;
+            ctx.font = 'bold 16px Montserrat';
+            const textWidth = ctx.measureText(labelText).width;
+            ctx.fillRect(scaledX, scaledY - 30, textWidth + 10, 30);
+            
+            // Draw label text
+            ctx.fillStyle = 'white';
+            ctx.fillText(labelText, scaledX + 5, scaledY - 8);
+        }
+        
+        // Play Alert Function
+        let lastAlertTime = 0;
+        function playAlert() {
+            const now = Date.now();
+            // Only play alert once every 3 seconds to avoid spam
+            if (now - lastAlertTime > 3000) {
+                alertAudio.play().catch(e => {
+                    console.log('🔇 Audio play failed (this is normal on first load):', e.message);
+                });
+                lastAlertTime = now;
+                
+                // Stop audio after 2 seconds
                 setTimeout(() => {
-                    this.classList.remove('api-key-saved');
-                    this.innerHTML = originalText;
+                    alertAudio.pause();
+                    alertAudio.currentTime = 0;
                 }, 2000);
+            }
+        }
+    });
+
+    // ========== PARALLAX EFFECTS (Outside DOMContentLoaded) ========== 
+    
+    // ✅ PARALLAX MOUSE MOVEMENT for Features Section
+    const parallaxBg = document.getElementById('parallaxBg');
+    const featuresSection = document.querySelector('.features-section');
+
+    if (parallaxBg && featuresSection) {
+        featuresSection.addEventListener('mousemove', (e) => {
+            // Only apply parallax on desktop (screen width > 768px)
+            if (window.innerWidth > 768) {
+                const rect = featuresSection.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
                 
-                console.log('API Key saved successfully');
-            } else {
-                // Show error if empty
-                this.style.background = 'linear-gradient(45deg, #dc3545, #c82333)';
-                this.innerHTML = '<i class="fas fa-exclamation-triangle"></i> API Key Required!';
+                // Calculate movement as percentage of section dimensions
+                const xPercent = (x / rect.width) - 0.5; // -0.5 to 0.5
+                const yPercent = (y / rect.height) - 0.5; // -0.5 to 0.5
                 
-                setTimeout(() => {
-                    this.style.background = '';
-                    this.innerHTML = '<i class="fas fa-save"></i> Save API Key';
-                }, 2000);
+                // Apply subtle movement (multiply by small number for gentle effect)
+                const moveX = xPercent * 40; // Max 40px movement
+                const moveY = yPercent * 40; // Max 40px movement
+                
+                parallaxBg.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            }
+        });
+
+        // Reset position when mouse leaves
+        featuresSection.addEventListener('mouseleave', () => {
+            if (window.innerWidth > 768) {
+                parallaxBg.style.transform = 'translate(0px, 0px)';
             }
         });
     }
-    
-    // Function to get the API key (for use in your detection code)
-    window.getRoboflowApiKey = function() {
-        return localStorage.getItem('roboflowApiKey');
-    };
-});
-    </script>
+
+    // ✅ PARALLAX MOUSE MOVEMENT for Demo Section
+    const demoParallaxBg = document.getElementById('demoParallaxBg');
+    const demoSection = document.querySelector('.demo-section');
+
+    if (demoParallaxBg && demoSection) {
+        demoSection.addEventListener('mousemove', (e) => {
+            // Only apply parallax on desktop (screen width > 768px)
+            if (window.innerWidth > 768) {
+                const rect = demoSection.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Calculate movement as percentage of section dimensions
+                const xPercent = (x / rect.width) - 0.5; // -0.5 to 0.5
+                const yPercent = (y / rect.height) - 0.5; // -0.5 to 0.5
+                
+                // Apply subtle movement (multiply by small number for gentle effect)
+                const moveX = xPercent * 40; // Max 40px movement
+                const moveY = yPercent * 40; // Max 40px movement
+                
+                demoParallaxBg.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            }
+        });
+
+        // Reset position when mouse leaves
+        demoSection.addEventListener('mouseleave', () => {
+            if (window.innerWidth > 768) {
+                demoParallaxBg.style.transform = 'translate(0px, 0px)';
+            }
+        });
+    }
+
+    // ========== SMOOTH SCROLLING ========== 
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // ========== VIDEO AUTOPLAY ========== 
+    window.addEventListener('load', function() {
+        const heroVideo = document.getElementById('heroVideo');
+        if (heroVideo) {
+            heroVideo.play().catch(function(error) {
+                console.log('⚠️ Video autoplay was prevented:', error.message);
+            });
+        }
+    });
+
+    // Try Demo button scroll
+    const tryDemoBtn = document.getElementById('tryDemoBtn');
+    if (tryDemoBtn) {
+        tryDemoBtn.addEventListener('click', function() {
+            const demoSection = document.querySelector('#demo');
+            if (demoSection) {
+                demoSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    }
+
+</script>
 </body>
 </html>
