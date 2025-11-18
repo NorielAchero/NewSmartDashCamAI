@@ -183,6 +183,25 @@
         }
 
         /* ========== ABOUT SECTION - 100VH ========== */
+
+
+.about-section {
+    position: relative; /* Make sure this exists */
+    background: var(--surface-a40);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 60px 0;
+    overflow: hidden; /* ✅ Add this to contain particles */
+}
+
+/* Make sure content is above particles */
+.about-section .container {
+    position: relative;
+    z-index: 1;
+}
         .about-section {
             background: var(--surface-a40);
             min-height: 100vh;
@@ -486,6 +505,12 @@
             justify-content: center;
             padding: 100px 0;
             color: white;
+        }
+
+        /* ✅ ADD: Make sure content is above particles */
+        .process-section .container {
+            position: relative;
+            z-index: 1;
         }
 
         .process-header {
@@ -1462,13 +1487,14 @@
                 Advanced AI-Powered Dashboard Camera System for Enhanced Road Safety and Intelligent Monitoring
             </p>
             <div class="hero-buttons fade-in-up delay-2">
-                <a href="#features" class="btn btn-primary">Explore <i class="fas fa-rocket ms-2"></i></a>
+                <a href="#" class="btn btn-primary btn-explore" id="autoScrollBtn">Explore <i class="fas fa-rocket ms-2"></i></a>
             </div>
         </div>
     </section>
 
     <!-- About Section -->
     <section class="about-section">
+        
         <div class="container">
             <div class="row align-items-center">
                 <!-- Left Column - Text Content -->
@@ -1625,6 +1651,8 @@
 
     <!-- ✅ Development Process Section -->
     <section class="process-section" id="process">
+
+        
         <div class="container">
             <!-- Section Header -->
             <div class="process-header fade-in-up">
@@ -2350,6 +2378,100 @@
             }
         });
     }
+
+ // ========== AUTO-SCROLL WITH CONSTANT SPEED (FIXED) ========== 
+const autoScrollBtn = document.getElementById('autoScrollBtn');
+let isAutoScrolling = false;
+let scrollAnimation = null;
+
+if (autoScrollBtn) {
+    autoScrollBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (isAutoScrolling) {
+            stopAutoScroll();
+            return;
+        }
+        
+        startAutoScroll();
+    });
+}
+
+function startAutoScroll() {
+    isAutoScrolling = true;
+    
+    // ✅ FIRST: Always scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Wait for scroll to top to complete
+    setTimeout(() => {
+        // Change button text
+        if (autoScrollBtn) {
+            autoScrollBtn.innerHTML = 'Stop Explore <i class="fas fa-pause ms-2"></i>';
+            autoScrollBtn.classList.add('scrolling-active');
+        }
+        
+        // ✅ Calculate total page height from top (0) to bottom
+        const pageHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const pixelsPerFrame = 1; // ✅ Constant speed (adjust: 1=slow, 2=medium, 3=fast)
+        let currentPosition = 0;
+        
+        function autoScroll() {
+            if (!isAutoScrolling) return;
+            
+            // ✅ Increment by constant amount each frame
+            currentPosition += pixelsPerFrame;
+            
+            // Check if we reached the bottom
+            if (currentPosition >= pageHeight) {
+                currentPosition = pageHeight;
+                window.scrollTo(0, currentPosition);
+                stopAutoScroll();
+                console.log('✅ Reached bottom of page');
+                return;
+            }
+            
+            // Scroll to current position
+            window.scrollTo(0, currentPosition);
+            
+            // Continue animation
+            scrollAnimation = requestAnimationFrame(autoScroll);
+        }
+        
+        scrollAnimation = requestAnimationFrame(autoScroll);
+        console.log(`🚀 Auto-scroll started! Total distance: ${pageHeight}px at ${pixelsPerFrame}px/frame`);
+        
+    }, 500); // Wait 500ms for smooth scroll to top to complete
+    
+    // Stop on manual scroll or touch
+    window.addEventListener('wheel', stopAutoScroll, { once: true });
+    window.addEventListener('touchstart', stopAutoScroll, { once: true });
+    window.addEventListener('keydown', stopAutoScroll, { once: true });
+}
+
+function stopAutoScroll() {
+    if (!isAutoScrolling) return;
+    
+    isAutoScrolling = false;
+    
+    if (scrollAnimation) {
+        cancelAnimationFrame(scrollAnimation);
+        scrollAnimation = null;
+    }
+    
+    // Reset button
+    if (autoScrollBtn) {
+        autoScrollBtn.innerHTML = 'Explore <i class="fas fa-rocket ms-2"></i>';
+        autoScrollBtn.classList.remove('scrolling-active');
+    }
+    
+    console.log('⏸️ Auto-scroll stopped');
+}
+
+
+
+
+
 
 </script>
 </body>
