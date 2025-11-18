@@ -1414,6 +1414,35 @@
                 font-size: 0.95rem;
             }
         }
+
+        .btn-primary i.fa-rocket {
+            margin-left: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-primary:hover i.fa-rocket {
+            transform: translateX(5px) translateY(-5px);
+        }
+
+        /* ========== WIGGLE ANIMATION (Every 3 Seconds) ========== */
+@keyframes wiggle {
+    0%, 7%, 14%, 21%, 100% { 
+        transform: rotate(0deg); 
+    }
+    3.5% { 
+        transform: rotate(-5deg); 
+    }
+    10.5% { 
+        transform: rotate(5deg); 
+    }
+    17.5% { 
+        transform: rotate(-5deg); 
+    }
+}
+
+.btn-primary {
+    animation: wiggle 3s ease-in-out infinite;
+}
     </style>
 </head>
 <body>
@@ -1433,8 +1462,7 @@
                 Advanced AI-Powered Dashboard Camera System for Enhanced Road Safety and Intelligent Monitoring
             </p>
             <div class="hero-buttons fade-in-up delay-2">
-                <a href="#features" class="btn btn-primary">Explore Models</a>
-                <a href="#demo" class="btn btn-outline-light">Try Demo</a>
+                <a href="#features" class="btn btn-primary">Explore <i class="fas fa-rocket ms-2"></i></a>
             </div>
         </div>
     </section>
