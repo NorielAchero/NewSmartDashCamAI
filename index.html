@@ -16,6 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="favicon.jpeg" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         /* Color Palette Variables */
@@ -1450,24 +1451,100 @@
         }
 
         /* ========== WIGGLE ANIMATION (Every 3 Seconds) ========== */
-@keyframes wiggle {
-    0%, 7%, 14%, 21%, 100% { 
-        transform: rotate(0deg); 
-    }
-    3.5% { 
-        transform: rotate(-5deg); 
-    }
-    10.5% { 
-        transform: rotate(5deg); 
-    }
-    17.5% { 
-        transform: rotate(-5deg); 
-    }
-}
+        @keyframes wiggle {
+            0%, 7%, 14%, 21%, 100% { 
+                transform: rotate(0deg); 
+            }
+            3.5% { 
+                transform: rotate(-5deg); 
+            }
+            10.5% { 
+                transform: rotate(5deg); 
+            }
+            17.5% { 
+                transform: rotate(-5deg); 
+            }
+        }
 
-.btn-primary {
-    animation: wiggle 3s ease-in-out infinite;
-}
+        .btn-primary {
+            animation: wiggle 3s ease-in-out infinite;
+        }
+
+
+        /* ✅ Scroll to Top Button - Slow Fade In/Out */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-a20), var(--primary-a30));
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out; /* Slow fade transition */
+            box-shadow: 0 8px 20px rgba(255, 107, 74, 0.3);
+            animation: buttonBounce 2s infinite;
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-to-top:hover {
+            background: linear-gradient(135deg, var(--primary-a10), var(--primary-a20));
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 12px 28px rgba(255, 107, 74, 0.5);
+            animation: none;
+            transition: all 0.3s ease, opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
+        }
+
+        .scroll-to-top:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .scroll-to-top i {
+            color: white;
+            font-size: 20px;
+        }
+
+        /* Button Bounce Animation */
+        @keyframes buttonBounce {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-8px) scale(1);
+            }
+        }
+
+        .scroll-to-top.visible {
+            animation: buttonBounce 2s infinite;
+        }
+
+        .scroll-to-top:hover {
+            animation: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .scroll-to-top {
+                width: 45px;
+                height: 45px;
+                bottom: 20px;
+                right: 20px;
+            }
+            
+            .scroll-to-top i {
+                font-size: 18px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1601,7 +1678,7 @@
                 <!-- Distracted Driving Detection -->
                 <div class="col-lg-6">
                     <div class="feature-card fade-in-up delay-2">
-                        <img src="distracted.jpeg" alt="Distracted Driving Detection" class="feature-image">
+                        <img src="distracted2.png" alt="Distracted Driving Detection" class="feature-image">
                         <div class="feature-content">
                             <h3 class="feature-name">Distracted Driving Detection</h3>
                             <p class="feature-description">
@@ -1881,6 +1958,10 @@
             </div>
         </div>
     </footer>
+
+<button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
@@ -2469,7 +2550,38 @@ function stopAutoScroll() {
     console.log('⏸️ Auto-scroll stopped');
 }
 
+// ✅ Scroll to Top Button Functionality - Fixed Version
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollToTopBtn = document.getElementById('scrollToTop');
+    
+    if (!scrollToTopBtn) {
+        console.error('Scroll to top button not found!');
+        return;
+    }
 
+    // Show/Hide button based on scroll position
+    function toggleScrollButton() {
+        if (window.pageYOffset > 300) {
+            scrollToTopBtn.classList.add('visible');
+        } else {
+            scrollToTopBtn.classList.remove('visible');
+        }
+    }
+
+    // Check on scroll
+    window.addEventListener('scroll', toggleScrollButton);
+
+    // Check initial position on page load
+    toggleScrollButton();
+
+    // Smooth scroll to top when clicked
+    scrollToTopBtn.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+});
 
 
 
